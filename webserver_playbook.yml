@@ -1,18 +1,44 @@
 ---
 - hosts: all
   become: yes
+  tasks: 
 
-- name: Update APT
-  ansible.builtin.apt:
-    update_cache: true
+    - name: Update APT
+      ansible.builtin.apt:
+        update_cache: true
 
-- name: Install python-apt
-  ansible.builtin.apt:
-    name: python-apt
-    state: present
+    - name: Install python-apt
+      ansible.builtin.apt:
+        name: python-apt
+        state: latest
 
-- name: Install apache2
-  ansible.builtin.apt:
-    name: apache2
-    state: present
+    - name: Install apache2
+      ansible.builtin.apt:
+        name: apache2
+        state: latest
 
+    - name: Copy apache2.conf
+      ansible.builtin.copy:
+        src: files/config/apache2.conf
+        dest: /etc/apache2/apache2.conf
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Copy index.html
+      ansible.builtin.copy:
+        src: files/site/index.html
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Create symbolic link
+      ansible.builtin.file:
+        src: /etc/apache2/mods-available/headers.load
+        dest: /etc/apache2/mods-enabled/headers.load
+        owner: root
+        group: root
+        state: link
+    - name: Restart apache2
+      ansible.builtin.service:
+        name: apache2
+        state: restarted

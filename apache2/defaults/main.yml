@@ -1,0 +1,5 @@
+---
+# defaults file for apache2
+config: apache2.conf
+index: index.html
+#Note if it does not work in testing move it to the vars folder.

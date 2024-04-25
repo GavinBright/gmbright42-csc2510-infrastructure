@@ -40,7 +40,7 @@
     owner: root
     group: root
     mode: '0644'
-- name: Copy index.html
+- name: Copy index.php
   ansible.builtin.copy:
     src: index.php
     dest: /var/www/html/index.php

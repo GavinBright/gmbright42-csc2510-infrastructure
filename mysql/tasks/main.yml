@@ -32,22 +32,22 @@
     mode: '0755'
 
 - name: Execute the script
-  ansible.builtin.shell: /tmp/password.sh "{{ mysql_root_password }}"
-  register: result
+  ansible.builtin.shell: /tmp/newpassword.sh "{{ mysql_root_password }}"
+  register: script_output
   
 - name: Output result from script
   ansible.builtin.debug:
-    msg: "{{ result.stdout_lines }}"
+    msg: "{{ script_output.stdout_lines }}"
 
 - name: Clean up - remove the script from the remote server
   ansible.builtin.file:
-    path: /tmp/password.sh
+    path: /tmp/newpassword.sh
     state: absent
 
 - name: Create MySQL database
-  community.mysql.mysql_db:
+  mysql_db:
     login_user: root
-    login_password: "{{mysql_root_password }}"
+    login_password: "{{ mysql_root_password }}"
     name: "{{ mysql_database }}"
     state: present
 
@@ -66,7 +66,7 @@
   ansible.builtin.copy:
     src: "{{ mysql_sql_file }}"
     dest: ~"{{ mysql_sql_file }}"
-  when: mysql_import_data = "true"
+  when: mysql_import_data
 
 - name: Import SQL data
   community.mysql.mysql_db:
@@ -75,7 +75,7 @@
     name: "{{ mysql_database }}"
     state: import
     target: ~"{{ mysql_sql_file }}"
-  when: mysql_import_data = "true"
+  when: mysql_import_data
 
 # Broke the bottom task below into two seperate tasks to play it safe.
 - name: Update MySQL bind-address to allow external connections
@@ -85,6 +85,6 @@
     line: '{{ item.line }}'
     state: present
   loop:
-    - { regexp: '^bind-address\s*=\s*127\.0\.0\.1'. line: 'bind-address = 0.0.0.0' }
+    - { regexp: '^bind-address\s*=\s*127\.0\.0\.1', line: 'bind-address = 0.0.0.0' }
     - { regexp: '^mysqlx-bind-address\s*=\s*127\.0\.0\.1', line: 'mysqlx-bind-address = 0.0.0.0' }
   notify: Restart MySQL Server

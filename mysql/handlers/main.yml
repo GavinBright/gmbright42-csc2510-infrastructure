@@ -1,6 +1,6 @@
 ---
 # handlers file for mysql
-- name: Restart MySQL sevrver
+- name: Restart MySQL Sevrver
   ansible.builtin.service:
     name: MySQL
     state: restarted

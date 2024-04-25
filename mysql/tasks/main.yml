@@ -28,18 +28,16 @@
 - name: Copy update script to the server
   ansible.builtin.copy:
     src: '{{ password }}'
-    dest: /tmp
-    owner: root
-    group: root
-    mode: '0644'
-  FLUSH PRIVILEGES 
+    dest: /tmp/newpassword.sh
+    mode: '0755'
 
 - name: Execute the script
-  ansible.builtin.shell:
-      
-
+  ansible.builtin.shell: /tmp/password.sh "{{ mysql_root_password }}"
+  register: result
+  
 - name: Output result from script
-# TODO
+  ansible.builtin.debug:
+    msg: "{{ result.stdout_lines }}"
 
 - name: Clean up - remove the script from the remote server
   ansible.builtin.file:
@@ -48,7 +46,9 @@
 
 - name: Create MySQL database
   community.mysql.mysql_db:
-    name: Database
+    login_user: root
+    login_password: "{{mysql_root_password }}"
+    name: "{{ mysql_database }}"
     state: present
 
 - name: Create MySQL user
@@ -63,10 +63,28 @@
 
 - name: Copy SQL file to remote host
 # TODO - this should only be run if mysql_import_data is true
+  ansible.builtin.copy:
+    src: "{{ mysql_sql_file }}"
+    dest: ~"{{ mysql_sql_file }}"
+  when: mysql_import_data = "true"
 
 - name: Import SQL data
-# TODO
+  community.mysql.mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ mysql_database }}"
+    state: import
+    target: ~"{{ mysql_sql_file }}"
+  when: mysql_import_data = "true"
 
-- name: Update MySQL bind-address and mysqlx-bind-address to allow external connections
-# TODO - this can be done in a single task or broken into two tasks, one per line
-# Use notify to restart mysql once complete.
+# Broke the bottom task below into two seperate tasks to play it safe.
+- name: Update MySQL bind-address to allow external connections
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^{{ item.regexp }}'
+    line: '{{ item.line }}'
+    state: present
+  loop:
+    - { regexp: '^bind-address\s*=\s*127\.0\.0\.1'. line: 'bind-address = 0.0.0.0' }
+    - { regexp: '^mysqlx-bind-address\s*=\s*127\.0\.0\.1', line: 'mysqlx-bind-address = 0.0.0.0' }
+  notify: Restart MySQL Server

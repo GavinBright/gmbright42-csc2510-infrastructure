@@ -10,6 +10,21 @@
     name: apache2
     state: latest
 
+- name: Install php
+  ansible.builtin.apt:
+    name: php
+    state: latest
+
+- name: Install libapache2-mod-php
+  ansible.builtin.apt:
+    name: libapache2-mod-php
+    state: latest
+
+- name: Install php-mysql
+  ansible.builtin.apt:
+    name: php-mysql
+    state: latest
+
 - name: Copy apache2.conf
   ansible.builtin.copy:
     src: '{{ config }}'
@@ -17,10 +32,18 @@
     owner: root
     group: root
     mode: '0644'
+
 - name: Copy index.html
   ansible.builtin.copy:
     src: '{{ index }}'
     dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
+- name: Copy index.html
+  ansible.builtin.copy:
+    src: index.php
+    dest: /var/www/html/index.php
     owner: root
     group: root
     mode: '0644'
